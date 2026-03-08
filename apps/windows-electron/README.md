@@ -39,3 +39,11 @@ From the repo root you can also run:
 ```bash
 pnpm win:dist
 ```
+
+## Interactive onboarding inside the app
+
+If the app cannot connect to the local Gateway, it shows a setup page with buttons to:
+
+- run `openclaw onboard --install-daemon` in a terminal window
+- run `openclaw gateway run --bind loopback --port 18789 --force` in a terminal window
+- retry connection and jump to WebChat once the Gateway is healthy

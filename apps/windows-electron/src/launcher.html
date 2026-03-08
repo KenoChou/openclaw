@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenClaw Windows setup</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, Segoe UI, system-ui, sans-serif;
+        background: #0b0f14;
+        color: #e8eef5;
+      }
+      .wrap {
+        max-width: 760px;
+        margin: 56px auto;
+        padding: 0 20px;
+      }
+      h1 {
+        margin: 0 0 10px;
+      }
+      .card {
+        border: 1px solid #253347;
+        border-radius: 12px;
+        padding: 18px;
+        background: #131b26;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+      button {
+        background: #2d7ef7;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 14px;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: #223149;
+      }
+      code {
+        background: #0f1520;
+        border: 1px solid #253347;
+        border-radius: 6px;
+        padding: 2px 6px;
+      }
+      #status {
+        color: #9eb0c6;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>OpenClaw Gateway setup</h1>
+      <p>
+        We could not reach the local Gateway at <code>127.0.0.1:18789</code>. You can run the same
+        interactive CLI flow directly from this app.
+      </p>
+
+      <div class="card">
+        <strong>Recommended</strong>
+        <p>Open an interactive terminal and run onboarding with daemon install:</p>
+        <code>openclaw onboard --install-daemon</code>
+
+        <div class="row">
+          <button id="onboard">Run onboarding in terminal</button>
+          <button id="gateway" class="secondary">Run gateway only in terminal</button>
+          <button id="retry" class="secondary">Retry connection</button>
+          <button id="docs" class="secondary">Windows docs</button>
+        </div>
+
+        <p id="status">Waiting for setup action…</p>
+      </div>
+    </div>
+
+    <script>
+      const setStatus = (msg) => {
+        document.getElementById('status').textContent = msg;
+      };
+
+      document.getElementById('onboard').addEventListener('click', async () => {
+        await window.openclawDesktop.openOnboardTerminal();
+        setStatus('Opened onboarding terminal. Finish the prompts, then click Retry connection.');
+      });
+
+      document.getElementById('gateway').addEventListener('click', async () => {
+        await window.openclawDesktop.openGatewayTerminal();
+        setStatus('Opened gateway terminal. Once running, click Retry connection.');
+      });
+
+      document.getElementById('retry').addEventListener('click', async () => {
+        setStatus('Checking gateway…');
+        const result = await window.openclawDesktop.retryConnect();
+        if (!result.ready) {
+          setStatus('Gateway still not reachable. Keep terminal open and try again.');
+        }
+      });
+
+      document.getElementById('docs').addEventListener('click', async () => {
+        await window.openclawDesktop.openWindowsDocs();
+      });
+    </script>
+  </body>
+</html>

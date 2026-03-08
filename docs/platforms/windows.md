@@ -224,3 +224,7 @@ Code lives in `apps/windows-electron/`.
 
 `pnpm win:dist` builds Windows artifacts (NSIS installer + portable) into
 `apps/windows-electron/dist/`.
+
+If the app cannot reach the local gateway on startup, it shows an in-app setup
+panel that can open `openclaw onboard --install-daemon` in an interactive
+terminal window.

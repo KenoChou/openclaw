@@ -1,6 +1,7 @@
-const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const { spawn } = require('node:child_process');
 const http = require('node:http');
+const path = require('node:path');
 
 const GATEWAY_HOST = '127.0.0.1';
 const GATEWAY_PORT = 18789;
@@ -77,6 +78,50 @@ function stopGateway() {
   gatewayProcess = null;
 }
 
+function openCommandInTerminal(commandLabel, command) {
+  // We use a separate terminal window so interactive prompts (like onboard)
+  // behave exactly like the CLI version users already know.
+  if (process.platform === 'win32') {
+    spawn(
+      'cmd.exe',
+      ['/d', '/s', '/c', 'start', '""', 'cmd.exe', '/k', command],
+      {
+        detached: true,
+        stdio: 'ignore',
+      },
+    ).unref();
+    return;
+  }
+
+  const title = `OpenClaw ${commandLabel}`;
+  if (process.platform === 'darwin') {
+    const escaped = command.replace(/"/g, '\\"');
+    spawn('osascript', [
+      '-e',
+      `tell application "Terminal" to do script "${escaped}"`,
+      '-e',
+      `tell application "Terminal" to set custom title of front window to "${title}"`,
+    ]).unref();
+    return;
+  }
+
+  spawn('x-terminal-emulator', ['-e', command], { detached: true, stdio: 'ignore' }).unref();
+}
+
+async function showLauncherPage() {
+  if (!mainWindow) {
+    return;
+  }
+  await mainWindow.loadFile(path.join(__dirname, 'launcher.html'));
+}
+
+async function showWebchat() {
+  if (!mainWindow) {
+    return;
+  }
+  await mainWindow.loadURL(WEBCHAT_URL);
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -86,7 +131,7 @@ function createWindow() {
     autoHideMenuBar: true,
     title: 'OpenClaw',
     webPreferences: {
-      preload: require('node:path').join(__dirname, 'preload.cjs'),
+      preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -104,25 +149,40 @@ ipcMain.handle('gateway:status', async () => {
   };
 });
 
+ipcMain.handle('setup:open-onboard-terminal', async () => {
+  openCommandInTerminal('Onboarding', 'openclaw onboard --install-daemon');
+  return { ok: true };
+});
+
+ipcMain.handle('setup:open-gateway-terminal', async () => {
+  openCommandInTerminal('Gateway', 'openclaw gateway run --bind loopback --port 18789 --force');
+  return { ok: true };
+});
+
+ipcMain.handle('setup:open-docs', async () => {
+  await shell.openExternal('https://docs.openclaw.ai/platforms/windows');
+  return { ok: true };
+});
+
+ipcMain.handle('setup:retry-connect', async () => {
+  const ready = await waitForGateway(10_000);
+  if (ready) {
+    await showWebchat();
+  }
+  return { ready };
+});
+
 app.whenReady().then(async () => {
   startGateway();
   createWindow();
 
   const ready = await waitForGateway();
   if (ready) {
-    await mainWindow.loadURL(WEBCHAT_URL);
+    await showWebchat();
     return;
   }
 
-  await dialog.showMessageBox({
-    type: 'error',
-    title: 'OpenClaw Gateway not reachable',
-    message: 'Could not start or reach the local OpenClaw Gateway.',
-    detail:
-      'Install openclaw CLI and make sure it is available in PATH, then relaunch this app.',
-  });
-
-  app.quit();
+  await showLauncherPage();
 });
 
 app.on('window-all-closed', () => {
