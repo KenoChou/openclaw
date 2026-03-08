@@ -14,7 +14,9 @@ tooling far more compatible (Node/Bun/pnpm, Linux binaries, skills). Native
 Windows might be trickier. WSL2 gives you the full Linux experience — one command
 to install: `wsl --install`.
 
-Native Windows companion apps are planned.
+Native Windows companion apps are planned. The preferred desktop stack is
+Electron so we can reuse the existing web UI and ship a Windows-native wrapper
+around the local OpenClaw Gateway.
 
 ## Install (WSL2)
 
@@ -199,5 +201,26 @@ Full guide: [Getting Started](/start/getting-started)
 
 ## Windows companion app
 
-We do not have a Windows companion app yet. Contributions are welcome if you want
-contributions to make it happen.
+We do not have a Windows companion app yet.
+
+Current direction for contributors:
+
+- Use Electron for the desktop shell.
+- Reuse the existing OpenClaw web UI in the renderer process.
+- Start/monitor the local `openclaw gateway run` process from Electron main.
+- Keep auth/session data in standard OpenClaw paths so CLI + app stay in sync.
+
+Contributions are welcome if you want to help make this happen.
+
+Initial scaffold in this repo:
+
+```bash
+pnpm win:install
+pnpm win:dev
+pnpm win:dist
+```
+
+Code lives in `apps/windows-electron/`.
+
+`pnpm win:dist` builds Windows artifacts (NSIS installer + portable) into
+`apps/windows-electron/dist/`.
